@@ -184,3 +184,7 @@ assert(typeid(*b) == typeid(*f));
 assert(typeid(*b) == typeid(*f2));
 assert(typeid(*f2) == typeid(*f));
 ```
+
+# TODO
+- Pointers: I've never really tested them in a way where I'd want to serialize / deserilize them, but can end up being null. Everything right now just assumes that an object exists if you want to serialize them, or at least, that's what I assume
+
