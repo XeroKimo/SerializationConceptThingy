@@ -143,11 +143,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Single Include\Serializer.h" />
     <ClInclude Include="Bar.h" />
     <ClInclude Include="Foo.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="JsonSerializer.h" />
-    <ClInclude Include="Serializer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bar.cpp" />
