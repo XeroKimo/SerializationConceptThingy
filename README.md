@@ -3,6 +3,8 @@ A wrapper around serialization code that would provide a common interface regard
 
 Inspired by std::allocator and std::hash, this library attempts to provide a concept that will allow you to serialize / de-serialize objects without too much worry about what the underlying code is. Serialization / Deserialization does not need to modify any existing code, just simply specialize a template class This library by itself does not provide the ability to serialize / de-serialize, it is merely just a concept which one must fill out.
 
+I'm still working out on what the final interface looks like, and what the concept requires, for example, I'm thinking of removing opening / closing file requirements and just provide a dump function instead that would dump it's current contents.
+
 # Requirements
 - C++17
 - RTTI enabled (Optional used for being able to polymoprhic serialization / deserialization which requires type_info and std::any to work)
@@ -188,4 +190,5 @@ assert(typeid(*f2) == typeid(*f));
 
 # TODO
 - Pointers: I've never really tested them in a way where I'd want to serialize / deserilize them, but can end up being null. Everything right now just assumes that an object exists if you want to serialize them, or at least, that's what I assume
+- Using aliases: STL classes tend to have some using alias in it to enable meta-programming and for tagging a class, I intend to figure out what aliases are required and at least make one tag for the serializer so that you only have to specialize the SerializeConstruct once and instead just check the tags
 
