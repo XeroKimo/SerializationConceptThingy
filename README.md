@@ -4,8 +4,8 @@ A wrapper around serialization code that would provide a common interface regard
 Inspired by std::allocator and std::hash, this library attempts to provide a concept that will allow you to serialize / de-serialize objects without too much worry about what the underlying code is. Serialization / Deserialization does not need to modify any existing code, just simply specialize a template class This library by itself does not provide the ability to serialize / de-serialize, it is merely just a concept which one must fill out.
 
 # Requirements
-C++17
-RTTI enabled (Optional used for being able to polymoprhic serialization / deserialization which requires type_info and std::any to work)
+- C++17
+- RTTI enabled (Optional used for being able to polymoprhic serialization / deserialization which requires type_info and std::any to work)
 
 # Main Idea
 Projects only need to include 1 file, Serializer.h then must fill out the following:
