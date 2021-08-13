@@ -5,11 +5,12 @@ Inspired by std::allocator and std::hash, this library attempts to provide a con
 
 # Requirements
 C++17
+RTTI enabled (Optional used for being able to polymoprhic serialization / deserialization which requires type_info and std::any to work)
 
 # Main Idea
-There is 1 concept the user must provide and 1 class that the user must fill out for each
-- Serializer (Concept)
-- SerializeConstruct (Class)
+Projects only need to include 1 file, Serializer.h then must fill out the following:
+- SerializeConstruct (Class, fill out at least once per object and serializer)
+- Serializer (Concept, fill out once per class that satisfies this concept)
 
 ## SerializeConstruct
 Inspired by std::hash, all one must do is specialize this template class. The signature appears as follows
