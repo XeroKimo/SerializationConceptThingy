@@ -27,20 +27,6 @@ SOFTWARE.
 #include "json.hpp"
 #include <fstream>
 
-template<class T>
-inline constexpr bool is_arithmetic_value = std::is_arithmetic_v<T> && !std::is_pointer_v<T>;
-
-template<class T>
-inline constexpr bool is_arithmetic_pointer = std::is_arithmetic_v<std::remove_pointer_t<T>> && std::is_pointer_v<T>;
-
-template<class T>
-inline constexpr bool is_class_value = std::is_class_v<T> && !std::is_pointer_v<T>;
-
-template<class T>
-inline constexpr bool is_class_pointer = std::is_class_v<std::remove_pointer_t<T>> && std::is_pointer_v<T>;
-
-
-
 //Serializer concept
 class JsonSerializer
 {

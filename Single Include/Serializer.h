@@ -260,14 +260,11 @@ struct PolymorphicSerializeConstruct
     }
     static void Deserialize(SerializerT& serializer, Derived*& v)
     {
-        Base* base;
-        auto any = std::any(std::reference_wrapper<Base*>(base));
+        auto any = std::any(std::reference_wrapper<Base*>(v));
         std::string type;
 
         serializer.Deserialize("Type", type);
         GetPolymorphicDeserializeFunctions<SerializerT>()[type](serializer, any);
-
-        v = static_cast<Derived*>(base);
     }
 };
 
@@ -286,16 +283,21 @@ private:
 
     static void PolymorphicSerialize(SerializerT& serializer, const std::any& v)
     {
+        const DerivedType* value = static_cast<const DerivedType*>(std::any_cast<std::reference_wrapper<const BaseType*>>(v).get());
         //This function does nothing but casts the serialized type to it's concrete type and forwards it to the real serialization
-        SerializeConstruct<DerivedType, SerializerT>::Serialize(serializer, *static_cast<const DerivedType*>(std::any_cast<std::reference_wrapper<const BaseType*>>(v).get()));
+        SerializeConstruct<DerivedType, SerializerT>::Serialize(serializer, *value);
     }
 
     static void PolymorphicDeserialize(SerializerT& serializer, std::any& v)
     {
-        std::reference_wrapper<BaseType*> value = std::any_cast<std::reference_wrapper<BaseType*>>(v);
-        value.get() = new DerivedType();
+        DerivedType* value = new DerivedType();
+
         //This function does nothing but casts the deserialized type to it's concrete type and forwards it to the real serialization
-        SerializeConstruct<DerivedType, SerializerT>::Deserialize(serializer, (*static_cast<DerivedType*>(value.get())));
+        SerializeConstruct<DerivedType, SerializerT>::Deserialize(serializer, *value);
+
+        std::any_cast<std::reference_wrapper<BaseType*>>(v).get() = value;
+
+
     }
 };
 
