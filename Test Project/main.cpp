@@ -35,19 +35,22 @@ int main()
     int test = 20;
 
     serializer.Serialize("test", test);
-    int test2 = serializer.Deserialize<int>("test");
+    int test2;
+    serializer.Deserialize("test", test2);
     assert(test == test2);
 
     int* ip = new int(50);
     serializer.Serialize("ip", ip);
-    int* ip2 = serializer.Deserialize<int*>("ip");
+    int* ip2; 
+    serializer.Deserialize("ip", ip2);
     
     assert(*ip == *ip2);
 
     Foo f;
     f.x = 300;
     serializer.Serialize("f", f);
-    Foo f2 = serializer.Deserialize<Foo>("f");
+    Foo f2;
+    serializer.Deserialize("f", f2);
 
     assert(f.x == f2.x);
 
@@ -55,7 +58,8 @@ int main()
     b.x = 300;
     b.y = 600;
     serializer.Serialize("b", b);
-    Bar b2 = serializer.Deserialize<Bar>("b");
+    Bar b2;
+    serializer.Deserialize("b", b2);
 
     assert(b.x == b2.x && b.y == b2.y);
 
@@ -63,10 +67,28 @@ int main()
     bp->x = 300;
     bp->y = 700;
     serializer.Serialize("bp", bp);
-    Bar* bp2 = serializer.Deserialize<Bar*>("bp");
+    Bar* bp2;
+    serializer.Deserialize("bp", bp2);
 
     if(bp == nullptr)
         assert(bp == bp2);
     else
         assert(bp->x == bp2->x && bp->y == bp2->y);
-}
+
+    Foo* foo = new Bar();
+    serializer.PolySerialize<Foo>("foo", foo);
+
+    Foo* foo2;
+    serializer.PolyDeserialize<Foo>("foo", foo2);
+
+    {
+        std::fstream stream("JsonTest.json", std::ios::out);
+
+        stream << serializer.Dump();
+        stream.flush();
+        stream.close();
+        std::string output = serializer.Dump();
+    }
+
+
+ }

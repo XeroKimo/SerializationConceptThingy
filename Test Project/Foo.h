@@ -43,6 +43,6 @@ struct SerializeConstruct<Foo, JsonSerializer>
 
     static void Deserialize(JsonSerializer& serializer, Foo& v)
     {
-        v.x = serializer.Deserialize<int>("x");
+        serializer.Deserialize("x", v.x);
     }
 };

@@ -57,7 +57,7 @@ struct SerializeConstruct<Bar, JsonSerializer>
             //  Nested Classes, Non Polymorphic Class Pointers  -> serializer.DeserializeObject("foo", v.foo);
             //  Nested Owning Polymorphic Pointers              -> serialize.PolymorphicDeserializeObject("bar", v.bar);
 
-        v.y = serializer.Deserialize<int>("y");
+       serializer.Deserialize("y", v.y);
     }
 
 };
