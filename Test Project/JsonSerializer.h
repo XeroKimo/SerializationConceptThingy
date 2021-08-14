@@ -27,156 +27,66 @@ SOFTWARE.
 #include "json.hpp"
 #include <fstream>
 
+template<class T>
+inline constexpr bool is_arithmetic_value = std::is_arithmetic_v<T> && !std::is_pointer_v<T>;
+
+template<class T>
+inline constexpr bool is_arithmetic_pointer = std::is_arithmetic_v<std::remove_pointer_t<T>> && std::is_pointer_v<T>;
+
 
 //Serializer concept
 class JsonSerializer
 {
 private:
     nlohmann::json json{};
-    std::fstream stream;
-    std::ios_base::openmode mode;
-
     std::vector<std::string_view> tree;
 
-public:
-    JsonSerializer(std::wstring_view fileName, std::ios_base::openmode mode) :
-        stream(fileName.data(), mode),
-        mode(mode)
-    {
-        if(mode & stream.in)
-            stream >> json;
-    }
-
-    ~JsonSerializer()
-    {
-        Close();
-    }
 
 public:
     //The following functions must exist unless specified
 
-    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
-    void Serialize(std::string_view name, const T& value)
+    template<class T, std::enable_if_t<is_arithmetic_value<T>, bool> = true>
+    void Serialize(std::string_view name, const T value)
     {
         //For built in types
         JsonReference(name) = value;
     }
 
-    template<class T>
-    void Serialize(std::string_view name, const std::vector<T>& value)
-    {
-        //For arrays
-        JsonReference(name) = value;
-    }
-
-    void Serialize(std::string_view name, std::string_view value)
-    {
-        //For strings
-        JsonReference(name) = value;
-    }
-
-    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
-    void SerializeObject(std::string_view name, const T& value)
-    {
-        //Do not parse any member variables in here
-        //Member variables should be handled by the SerializeConstruct
-        //Only do any set up if required
-        // 
-        //For objects, at the minimum, the following must be called
-        tree.push_back(name);
-
-        SerializeConstruct<T, JsonSerializer>::Serialize(*this, value);
-
-        tree.pop_back();
-    }
-
-    //This is not required if you don't plan to support polymorphic serialization
-    template<class Base, class Derived, std::enable_if_t<std::is_base_of_v<Base, Derived>, bool> = true>
-    void PolymorphicSerializeObject(std::string_view name, const Derived& value)
-    {
-        //Do not parse any member variables in here
-        //Member variables should be handled by the SerializeConstruct
-        //Only do any set up if required
-        //For objects, at the minimum, the following must be called
-
-        tree.push_back(name);
-
-        Serialize("Type", typeid(value).name());
-        PolymorphicSerializeConstruct<Base, Derived, JsonSerializer>::Serialize(*this, value);
-
-        tree.pop_back();
-    }
-
-    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
-    void Deserialize(std::string_view name, T& value)
+    template<class T, std::enable_if_t<is_arithmetic_value<T>, bool> = true>
+    T Deserialize(std::string_view name)
     {
         //For built in types
-
-        value = JsonReference(name);
+        return JsonReference(name);
     }
 
-    template<class T>
-    void Deserialize(std::string_view name, std::vector<T>& value)
+    template<class T, std::enable_if_t<is_arithmetic_pointer<T>, bool> = true>
+    void Serialize(std::string_view name, const T value)
     {
-        //For arrays
-        auto ref = JsonReference(name);
-        value.insert(value.end(), ref.begin(), ref.end());
-    }
-
-    void Deserialize(std::string_view name, std::string& value)
-    {
-        //For strings
-        value = JsonReference(name);
-    }
-
-    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
-    void DeserializeObject(std::string_view name, T& value)
-    {
-        //Do not parse any member variables in here
-        //Member variables should be handled by the SerializeConstruct
-        //Only do any set up if required
-        //For objects, at the minimum, the following must be called
-        tree.push_back(name);
-
-        SerializeConstruct<T, JsonSerializer>::Deserialize(*this, value);
-
-        tree.pop_back();
-    }
-
-    //This is not required if you don't plan to support polymorphic serialization
-    template<class Base, class Derived, std::enable_if_t<std::is_class_v<Base>, bool> = true>
-    void PolymorphicDeserializeObject(std::string_view name, Derived*& value)
-    {
-        tree.push_back(name);
-
-        //Do not parse any member variables in here
-        //Member variables should be handled by the SerializeConstruct
-        //Only do any set up if required
-        // 
-        //For objects, at the minimum, the following must be called
-        std::string type;
-        Deserialize("Type", type);
-
-        PolymorphicSerializeConstruct<Base, Derived, JsonSerializer>::Deserialize(*this, value, type);
-
-        tree.pop_back();
-    }
-
-    void Flush()
-    {
-        //Writes data to the file
-        if(mode & stream.out)
-            stream << json;
-    }
-
-    void Close()
-    {
-        if(stream.is_open())
+        if(value == nullptr)
         {
-            //Writes data to the file then closes it
-            Flush();
-            stream.close();
+            JsonReference(name) = nullptr;
         }
+        else
+        {
+            JsonReference(name) = *value;
+        }
+    }
+
+    template<class T, std::enable_if_t<is_arithmetic_pointer<T>, bool> = true>
+    T Deserialize(std::string_view name)
+    {
+        using value_type = std::remove_pointer_t<T>;
+        auto ref = JsonReference(name);
+
+        if(ref.is_null())
+            return nullptr;
+        //For built in types
+        return new value_type(ref);
+    }
+
+    std::string Dump()
+    {
+        return json.dump();
     }
 
 private:

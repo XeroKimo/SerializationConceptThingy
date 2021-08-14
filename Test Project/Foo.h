@@ -33,16 +33,16 @@ struct Foo
 };
 
 
-template<>
-struct SerializeConstruct<Foo, JsonSerializer>
-{
-    static void Serialize(JsonSerializer& serializer, const Foo& v)
-    {
-        serializer.Serialize("x", v.x);
-    }
-
-    static void Deserialize(JsonSerializer& serializer, Foo& v)
-    {
-        serializer.Deserialize("x", v.x);
-    }
-};
+//template<>
+//struct SerializeConstruct<Foo, JsonSerializer>
+//{
+//    static void Serialize(JsonSerializer& serializer, const Foo& v)
+//    {
+//        serializer.Serialize("x", v.x);
+//    }
+//
+//    static void Deserialize(JsonSerializer& serializer, Foo& v)
+//    {
+//        serializer.Deserialize("x", v.x);
+//    }
+//};
