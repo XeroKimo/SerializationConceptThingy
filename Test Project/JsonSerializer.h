@@ -33,6 +33,12 @@ inline constexpr bool is_arithmetic_value = std::is_arithmetic_v<T> && !std::is_
 template<class T>
 inline constexpr bool is_arithmetic_pointer = std::is_arithmetic_v<std::remove_pointer_t<T>> && std::is_pointer_v<T>;
 
+template<class T>
+inline constexpr bool is_class_value = std::is_class_v<T> && !std::is_pointer_v<T>;
+
+template<class T>
+inline constexpr bool is_class_pointer = std::is_class_v<std::remove_pointer_t<T>> && std::is_pointer_v<T>;
+
 
 //Serializer concept
 class JsonSerializer
@@ -82,6 +88,70 @@ public:
             return nullptr;
         //For built in types
         return new value_type(ref);
+    }
+
+    template<class T, std::enable_if_t<is_class_value<T>, bool> = true>
+    void Serialize(std::string_view name, const T& value)
+    {
+        tree.push_back(name);
+
+        SerializeConstruct<T, JsonSerializer>::Serialize(*this, value);
+
+        tree.pop_back();
+    }
+
+    template<class T, std::enable_if_t<is_class_value<T>, bool> = true>
+    T Deserialize(std::string_view name)
+    {
+        tree.push_back(name);
+
+        T v;
+        SerializeConstruct<T, JsonSerializer>::Deserialize(*this, v);
+
+        tree.pop_back();
+
+        return v;
+    }
+
+    template<class T, std::enable_if_t<is_class_pointer<T>, bool> = true>
+    void Serialize(std::string_view name, const T& value)
+    {
+        using value_type = std::remove_pointer_t<T>;
+        if(value == nullptr)
+        {
+            JsonReference(name);
+        }
+        else
+        {
+            tree.push_back(name);
+
+            SerializeConstruct<value_type, JsonSerializer>::Serialize(*this, *value);
+
+            tree.pop_back();
+        }
+    }
+
+    template<class T, std::enable_if_t<is_class_pointer<T>, bool> = true>
+    T Deserialize(std::string_view name)
+    {
+        using value_type = std::remove_pointer_t<T>;
+        auto ref = JsonReference(name);
+
+        if(ref.is_null())
+        {
+            return nullptr;
+        }
+        else
+        {
+            tree.push_back(name);
+
+            T v = new value_type();
+            SerializeConstruct<value_type, JsonSerializer>::Deserialize(*this, *v);
+
+            tree.pop_back();
+
+            return v;
+        }
     }
 
     std::string Dump()

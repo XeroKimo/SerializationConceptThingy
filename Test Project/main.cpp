@@ -42,6 +42,31 @@ int main()
     serializer.Serialize("ip", ip);
     int* ip2 = serializer.Deserialize<int*>("ip");
     
-    assert(ip == ip2);
+    assert(*ip == *ip2);
 
+    Foo f;
+    f.x = 300;
+    serializer.Serialize("f", f);
+    Foo f2 = serializer.Deserialize<Foo>("f");
+
+    assert(f.x == f2.x);
+
+    Bar b;
+    b.x = 300;
+    b.y = 600;
+    serializer.Serialize("b", b);
+    Bar b2 = serializer.Deserialize<Bar>("b");
+
+    assert(b.x == b2.x && b.y == b2.y);
+
+    Bar* bp = new Bar();
+    bp->x = 300;
+    bp->y = 700;
+    serializer.Serialize("bp", bp);
+    Bar* bp2 = serializer.Deserialize<Bar*>("bp");
+
+    if(bp == nullptr)
+        assert(bp == bp2);
+    else
+        assert(bp->x == bp2->x && bp->y == bp2->y);
 }
