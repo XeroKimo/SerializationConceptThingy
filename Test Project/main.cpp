@@ -78,9 +78,10 @@ int main()
     Foo* foo = new Bar();
     serializer.PolySerialize<Foo>("foo", foo);
 
+
     Foo* foo2;
     serializer.PolyDeserialize<Foo>("foo", foo2);
-
+    assert(typeid(*foo) == typeid(*foo2));
     {
         std::fstream stream("JsonTest.json", std::ios::out);
 

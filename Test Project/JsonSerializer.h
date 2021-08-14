@@ -53,21 +53,21 @@ private:
 public:
     //The following functions must exist unless specified
 
-    template<class T, std::enable_if_t<is_arithmetic_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
     void Serialize(std::string_view name, const T value)
     {
         //For built in types
         JsonReference(name) = value;
     }
 
-    template<class T, std::enable_if_t<is_arithmetic_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
     void Deserialize(std::string_view name, T& value)
     {
         //For built in types
         value = JsonReference(name);
     }
 
-    template<class T, std::enable_if_t<is_arithmetic_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
     void Serialize(std::string_view name, const T* value)
     {
         if(value == nullptr)
@@ -80,7 +80,7 @@ public:
         }
     }
 
-    template<class T, std::enable_if_t<is_arithmetic_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
     void Deserialize(std::string_view name, T*& value)
     {
         using value_type = std::remove_pointer_t<T>;
@@ -89,7 +89,7 @@ public:
         value = (ref.is_null()) ? nullptr : new T(ref);
     }
 
-    template<class T, std::enable_if_t<is_class_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
     void Serialize(std::string_view name, const T& value)
     {
         tree.push_back(name);
@@ -99,7 +99,7 @@ public:
         tree.pop_back();
     }
 
-    template<class T, std::enable_if_t<is_class_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
     void Deserialize(std::string_view name, T& value)
     {
         tree.push_back(name);
@@ -109,7 +109,7 @@ public:
         tree.pop_back();
     }
 
-    template<class T, std::enable_if_t<is_class_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
     void Serialize(std::string_view name, const T* value)
     {
         if(value == nullptr)
@@ -126,7 +126,7 @@ public:
         }
     }
 
-    template<class T, std::enable_if_t<is_class_value<T>, bool> = true>
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
     void Deserialize(std::string_view name, T*& value)
     {
         auto ref = JsonReference(name);
@@ -146,11 +146,9 @@ public:
         }
     }
 
-    template<class Base, class Derived, std::enable_if_t<is_class_value<Derived>, bool> = true>
+    template<class Base, class Derived, std::enable_if_t<std::is_base_of_v<Base, Derived>, bool> = true>
     void PolySerialize(std::string_view name, const Derived* value)
     {
-        using value_type = std::remove_pointer_t<Derived>;
-        using base_value_type = std::remove_pointer_t<Base>;
         if(value == nullptr)
         {
             JsonReference(name);
@@ -159,14 +157,13 @@ public:
         {
             tree.push_back(name);
 
-            Serialize("Type", std::string(typeid(*value).name()));
-            PolymorphicSerializeConstruct<base_value_type, value_type, JsonSerializer>::Serialize(*this, value);
+            PolymorphicSerializeConstruct<Base, Derived, JsonSerializer>::Serialize(*this, value);
 
             tree.pop_back();
         }
     }
 
-    template<class Base, class Derived, std::enable_if_t<is_class_value<Derived>, bool> = true>
+    template<class Base, class Derived, std::enable_if_t<std::is_base_of_v<Base, Derived>, bool> = true>
     void PolyDeserialize(std::string_view name, Derived*& value)
     {
         auto ref = JsonReference(name);
@@ -179,9 +176,7 @@ public:
         {
             tree.push_back(name);
 
-            std::string type;
-            Deserialize("Type", type);
-            PolymorphicSerializeConstruct<Base, Derived, JsonSerializer>::Deserialize(*this, value, type);
+            PolymorphicSerializeConstruct<Base, Derived, JsonSerializer>::Deserialize(*this, value);
 
             tree.pop_back();
         }
@@ -195,15 +190,19 @@ public:
 private:
     nlohmann::json::reference JsonReference(std::string_view name)
     {
-        tree.push_back(name);
+        return JsonReference()[name.data()];
+    }
+
+    nlohmann::json::reference JsonReference()
+    {
+        if(tree.size() == 0)
+            return json;
 
         nlohmann::json::pointer j = &json[tree[0].data()];
         for(auto n = tree.begin() + 1; n != tree.end(); n++)
         {
             j = &((*j)[n->data()]);
         }
-
-        tree.pop_back();
 
         return *j;
     }
@@ -217,11 +216,11 @@ struct SerializeConstruct<std::string, JsonSerializer>
 {
     static void Serialize(JsonSerializer& serializer, const std::string& v)
     {
-        serializer.json[serializer.tree.back().data()] = v;
+        serializer.JsonReference() = v;
     }
 
     static void Deserialize(JsonSerializer& serializer, std::string& v)
     {
-        v = serializer.json[serializer.tree.back().data()];
+        v = serializer.JsonReference();
     }
 };

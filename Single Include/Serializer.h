@@ -40,20 +40,18 @@ struct SerializeConstruct;
     {
         //To serialize members, just simply do the following
         //
-        //  Basic types, arrays, strings                    -> serializer.Serialize("x", v.x);
-        //  Nested Classes                                  -> serializer.SerializeObject("foo", v.foo);
-        //  Non Polymorphic Class Pointers                  -> serializer.SerializeObject("foo", (*v.foo));
-        //  Nested Owning Polymorphic Pointers              -> serialize.PolymorphicSerializeObject("bar", v.bar);
+        //  Funadmental Values / Pointers, Objects, Non-Polymorphic Object Pointers -> serializer.Serialize("x", v.x);
+        //  Polymorphic Object Pointers                                             -> serializer.PolySerialize("foo", v.foo);
+        //  For base classes                                                        -> SerializeConstruct<Base, SerializerT>::Serialize(serializer, v);
     }
- 
+
     static void Deserialize(SerializerT& serializer, T& v)
     {
         //To deserialize members, just simply do the following
         //
-        //  Basic types, arrays, strings                    -> serializer.Deserialize<V>("x", v.x);
-        //  Nested Classes, Non Polymorphic Class Pointers  -> serializer.DeserializeObject("foo", v.foo);
-        //  Non Polymorphic Class Pointers                  -> serializer.DeserializeObject("foo", (*v.foo));
-        //  Nested Owning Polymorphic Pointers              -> serialize.PolymorphicDeserializeObject("bar", v.bar);
+        //  Funadmental Values / Pointers, Objects, Non-Polymorphic Object Pointers -> serializer.Deserialize("x", v.x);
+        //  Polymorphic Object Pointers                                             -> serializer.PolyDeserialize("foo", v.foo);
+        //  For base classes                                                        -> SerializeConstruct<Base, SerializerT>::Deserialize(serializer, v);
     }
 };
 */
@@ -63,106 +61,169 @@ struct SerializeConstruct;
 //Serializer concept
 class Serializer
 {
-
-  //The constructor must open some file
-  //The destructor must write the contents to the file and close it if the file has not been closed
-
 public:
+    //The following functions must exist unless specified
 
-  template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
-  void Serialize(std::string_view name, const T& value)
-  {
-      //For built in types
-  }
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+    void Serialize(std::string_view name, const T value)
+    {
+        //For built in value types
+    }
 
-  template<class T>
-  void Serialize(std::string_view name, const std::vector<T>& value)
-  {
-      //For arrays
-  }
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+    void Deserialize(std::string_view name, T& value)
+    {
+        //For built in value types
+    }
 
-  void Serialize(std::string_view name, std::string_view value)
-  {
-      //For strings
-  }
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+    void Serialize(std::string_view name, const T* value)
+    {
+        //For built in value pointer types
+        //value can be a nullptr, so that case must be accounted for
 
-  template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
-  void SerializeObject(std::string_view name, const T& value)
-  {
-      //Do not parse any member variables in here
-      //Member variables should be handled by the SerializeConstruct
-      //Only do any set up if required
+        //Depending on the library used for serialization
+        //c-style strings may not work, so for char*
+        //One must specialize the template, or just assume it's pointing to a single char
+    }
 
-      //For objects, at the minimum the following must be called
-      SerializeConstruct<T, Serializer>::Serialize(*this, value);
-  }
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+    void Deserialize(std::string_view name, T*& value)
+    {
+        //For built in value pointer types
+        //value can be a nullptr, so that case must be accounted for
 
-  //This is not required if you don't plan to support polymorphic serialization
-  template<class Base, class Derived, std::enable_if_t<std::is_base_of_v<Base, Derived>, bool> = true>
-  void PolymorphicSerializeObject(std::string_view name, const Derived& value)
-  {
-      //Do not parse any member variables in here
-      //Member variables should be handled by the SerializeConstruct
-      //Only do any set up if required
+        //Depending on the library used for serialization
+        //c-style strings may not work, so for char*
+        //One must specialize the template, or just assume it's pointing to a single char
+    }
 
-      //For objects, at the minimum, the following must be called
-      Serialize("Type", typeid(value).name());
-      PolymorphicSerializeConstruct<Base, Derived, Serializer>::Serialize(*this, value);
-  }
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
+    void Serialize(std::string_view name, const T& value)
+    {
+        //For object value types
 
-  template<class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
-  void Deserialize(std::string_view name, T& value)
-  {
-      //For built in types
-  }
+        //Do not do any serialization in this function.  Only setup if needed
+        //Object serialization will be handled by the SerializeConstruct. 
+        //At the minimum this function must do the following
 
-  template<class T>
-  void Deserialize(std::string_view name, std::vector<T>& value)
-  {
-      //For arrays
-  }
+        //SerializeConstruct<T, Serializer>::Serialize(*this, value);
+    }
 
-  void Deserialize(std::string_view name, std::string& value)
-  {
-      //For strings
-  }
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
+    void Deserialize(std::string_view name, T& value)
+    {
+        //For object value types
 
-  template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
-  void DeserializeObject(std::string_view name, T& value)
-  {
-      //Do not parse any member variables in here
-      //Member variables should be handled by the SerializeConstruct
-      //Only do any set up if required
+        //Do not do any serialization in this function.  Only setup if needed
+        //Object serialization will be handled by the SerializeConstruct. 
+        //At the minimum this function must do the following
 
-      //For objects, at the minimum, the following must be called
-      SerializeConstruct<T, Serializer>::Deserialize(*this, value);
-  }
+        //SerializeConstruct<T, Serializer>::Deserialize(*this, value);
+    }
 
-  //This is not required if you don't plan to support polymorphic serialization
-  template<class Base, class Derived, std::enable_if_t<std::is_class_v<Base>, bool> = true>
-  void PolymorphicDeserializeObject(std::string_view name, Derived*& value)
-  {
-      //Do not parse any member variables in here
-      //Member variables should be handled by the SerializeConstruct
-      //Only do any set up if required
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
+    void Serialize(std::string_view name, const T* value)
+    {
+        //For concrete object pointer types
+        //This is when the pointer was made somewhere along the lines of
+        //T* = new T();
 
-      //For objects, at the minimum, the following must be called
+        //Do not do any serialization in this function.  Only setup if needed
+        //Object serialization will be handled by the SerializeConstruct. 
+        //At the minimum this function must do the following
 
-      std::string type;
-      Deserialize("Type", type);
+        if(value == nullptr)
+        {
+            //Handle nullptr case
+        }
+        else
+        {
+            SerializeConstruct<T, Serializer>::Deserialize(*this, *value);
+        }
+    }
 
-      PolymorphicSerializeConstruct<Base, Derived, Serializer>::Deserialize(*this, value, type);
-  }
+    template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
+    void Deserialize(std::string_view name, T*& value)
+    {
+        //For concrete object pointer types
+        //This is when the pointer was made somewhere along the lines of
+        //T* = new T();
 
-  void Flush()
-  {
-      //Writes data to the file
-  }
+        //Do not do any serialization in this function.  Only setup if needed
+        //Object serialization will be handled by the SerializeConstruct.
+        //At the minimum this function must do the following
 
-  void Close()
-  {
-      //Writes data to the file then closes it
-  }
+        //Check to see if the value we're tryin to deserialize is null
+        //and handle that case
+        if()
+        {
+            value = nullptr;
+        }
+        else
+        {
+            SerializeConstruct<T, Serializer>::Deserialize(*this, *value);
+        }
+    }
+
+    template<class Base, class Derived, std::enable_if_t<std::is_base_of_v<Base, Derived>, bool> = true>
+    void PolySerialize(std::string_view name, const Derived* value)
+    {
+        //This function is optional
+        //Requires RTTI enabled to enable std::any and typeid, and be able to serialize strings
+        //In order to be used REGISTER_POLYMORPHIC_SERIALIZE_FUNCTIONS(Base, Derived, Serializer) macro must be called
+
+        //For polymorphic object pointer types
+        //This is when the pointer was made somewhere along the lines of
+        //Base* = new Derived();
+        //This can work with Base* = new Base(), but will be slower
+
+        //Do not do any serialization in this function.  Only setup if needed
+        //Object serialization will be handled by the SerializeConstruct.
+        //At the minimum this function must do the following
+
+        if(value == nullptr)
+        {
+            //Handle nullptr case
+        }
+        else
+        {
+            PolymorphicSerializeConstruct<Base, Derived, Serializer>::Serialize(*this, value);
+        }
+    }
+
+    template<class Base, class Derived, std::enable_if_t<std::is_base_of_v<Base, Derived>, bool> = true>
+    void PolyDeserialize(std::string_view name, Derived*& value)
+    {
+        //This function is optional
+        //Requires RTTI enabled to enable std::any and typeid, and be able to serialize strings
+        //In order to be used REGISTER_POLYMORPHIC_SERIALIZE_FUNCTIONS(Base, Derived, Serializer) macro must be called
+
+        //For polymorphic object pointer types
+        //This is when the pointer was made somewhere along the lines of
+        //Base* = new Derived();
+        //This can work with Base* = new Base(), but will be slower
+
+        //Do not do any serialization in this function.  Only setup if needed
+        //Object serialization will be handled by the SerializeConstruct.
+        //At the minimum this function must do the following
+
+        //Check to see if the value we're tryin to deserialize is null
+        //and handle that case
+        if()
+        {
+            value = nullptr;
+        }
+        else
+        {
+            PolymorphicSerializeConstruct<Base, Derived, Serializer>::Deserialize(*this, value);
+        }
+    }
+
+    std::string Dump()
+    {
+        //Return all the serialized data as a string
+    }
 };
  
  
@@ -194,19 +255,21 @@ struct PolymorphicSerializeConstruct
 {
     static void Serialize(SerializerT& serializer, const Derived*& v)
     {
+        serializer.Serialize("Type", std::string(typeid(*v).name()));
         GetPolymorphicSerializeFunctions<SerializerT>()[typeid(*v).name()](serializer, std::any(std::reference_wrapper<const Base*>(v)));
     }
-    static void Deserialize(SerializerT& serializer, Derived*& v, std::string_view type)
+    static void Deserialize(SerializerT& serializer, Derived*& v)
     {
         Base* base;
         auto any = std::any(std::reference_wrapper<Base*>(base));
+        std::string type;
 
-        GetPolymorphicDeserializeFunctions<SerializerT>()[type.data()](serializer, any);
+        serializer.Deserialize("Type", type);
+        GetPolymorphicDeserializeFunctions<SerializerT>()[type](serializer, any);
 
         v = static_cast<Derived*>(base);
     }
 };
-
 
 template<class BaseType, class DerivedType, class SerializerT>
 class RegisterSerialization
