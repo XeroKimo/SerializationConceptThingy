@@ -1,1 +1,22 @@
-{"bar":{"Type":"struct Bar","x":200,"y":300},"fBar":{"Type":"struct Bar","x":100,"y":600},"foo":{"x":100},"test":6,"values":[5,3,7,10]}
+{
+  "bar": {
+    "Type": "struct Bar",
+    "x": 200,
+    "y": 300
+  },
+  "fBar": {
+    "Type": "struct Bar",
+    "x": 100,
+    "y": 600
+  },
+  "foo": {
+    "x": 100
+  },
+  "test": 6,
+  "values": [
+    5,
+    3,
+    7,
+    10
+  ]
+}
