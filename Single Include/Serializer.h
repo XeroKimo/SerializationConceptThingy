@@ -121,7 +121,7 @@ public:
         //Object serialization will be handled by the SerializeConstruct. 
         //At the minimum this function must do the following
 
-        //SerializeConstruct<T, Serializer>::Serialize(*this, value);
+        //SerializeConstruct<T, serializer_type>::Serialize(*this, value);
     }
 
     template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
@@ -133,7 +133,7 @@ public:
         //Object serialization will be handled by the SerializeConstruct. 
         //At the minimum this function must do the following
 
-        //SerializeConstruct<T, Serializer>::Deserialize(*this, value);
+        //SerializeConstruct<T, serializer_type>::Deserialize(*this, value);
     }
 
     template<class T, std::enable_if_t<std::is_class_v<T>, bool> = true>
@@ -153,7 +153,7 @@ public:
         }
         else
         {
-            SerializeConstruct<T, Serializer>::Deserialize(*this, *value);
+            SerializeConstruct<T, serializer_type>::Deserialize(*this, *value);
         }
     }
 
@@ -176,7 +176,7 @@ public:
         }
         else
         {
-            SerializeConstruct<T, Serializer>::Deserialize(*this, *value);
+            SerializeConstruct<T, serializer_type>::Deserialize(*this, *value);
         }
     }
 
@@ -203,7 +203,7 @@ public:
         else
         {
             //PolymorphicSerializeConstruct assumes that the value is not a nullptr
-            PolymorphicSerializeConstruct<Base, Derived, Serializer>::Serialize(*this, value);
+            PolymorphicSerializeConstruct<Base, Derived, serializer_type>::Serialize(*this, value);
         }
     }
 
@@ -232,11 +232,16 @@ public:
         else
         {
             //PolymorphicSerializeConstruct assumes that the value is not a nullptr
-            PolymorphicSerializeConstruct<Base, Derived, Serializer>::Deserialize(*this, value);
+            PolymorphicSerializeConstruct<Base, Derived, serializer_type>::Deserialize(*this, value);
         }
     }
 
-    std::string Dump()
+    void Merge(const serializer_type& other)
+    {
+        //Merges the contents of the 2 serializers into 1
+    }
+
+    std::string Dump() const
     {
         //Return all the serialized data as a string
     }

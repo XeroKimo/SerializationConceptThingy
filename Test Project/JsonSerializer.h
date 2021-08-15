@@ -173,7 +173,12 @@ public:
         }
     }
 
-    std::string Dump()
+    void Merge(const serializer_type& type)
+    {
+        json.insert(type.json.begin(), type.json.end());
+    }
+
+    std::string Dump() const
     {
         return json.dump();
     }

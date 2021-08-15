@@ -32,6 +32,7 @@ SOFTWARE.
 int main()
 {
     JsonSerializer serializer;
+    JsonSerializer serializer2;
     int test = 20;
 
     serializer.Serialize("test", test);
@@ -57,18 +58,18 @@ int main()
     Bar b;
     b.x = 300;
     b.y = 600;
-    serializer.Serialize("b", b);
+    serializer2.Serialize("b", b);
     Bar b2;
-    serializer.Deserialize("b", b2);
+    serializer2.Deserialize("b", b2);
 
     assert(b.x == b2.x && b.y == b2.y);
 
     Bar* bp = new Bar();
     bp->x = 300;
     bp->y = 700;
-    serializer.Serialize("bp", bp);
+    serializer2.Serialize("bp", bp);
     Bar* bp2;
-    serializer.Deserialize("bp", bp2);
+    serializer2.Deserialize("bp", bp2);
 
     if(bp == nullptr)
         assert(bp == bp2);
@@ -76,11 +77,12 @@ int main()
         assert(bp->x == bp2->x && bp->y == bp2->y);
 
     Foo* foo = new Bar();
-    serializer.PolySerialize<Foo>("foo", foo);
+    serializer2.PolySerialize<Foo>("foo", foo);
 
 
     Foo* foo2;
-    serializer.PolyDeserialize<Foo>("foo", foo2);
+    serializer2.PolyDeserialize<Foo>("foo", foo2);
+    serializer.Merge(serializer2);
     assert(typeid(*foo) == typeid(*foo2));
     {
         std::fstream stream("JsonTest.json", std::ios::out);
