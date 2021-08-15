@@ -36,7 +36,17 @@ template<class Type, class SerializerT>
 struct SerializeConstruct;
 /*
 {
-    static void Serialize(SerializerT& serializer, const T& v)
+    //Required aliases   
+    using value_type = Type;
+    using pointer = Type*;
+    using reference = Type&;
+
+    using const_pointer = const Type*;
+    using const_reference = const Type&;
+
+    using serializer_type = SerializerT;
+
+    static void Serialize(serializer_type& serializer, const_reference v)
     {
         //To serialize members, just simply do the following
         //
@@ -45,7 +55,7 @@ struct SerializeConstruct;
         //  For base classes                                                        -> SerializeConstruct<Base, SerializerT>::Serialize(serializer, v);
     }
 
-    static void Deserialize(SerializerT& serializer, T& v)
+    static void Deserialize(serializer_type& serializer, reference v)
     {
         //To deserialize members, just simply do the following
         //
@@ -61,6 +71,10 @@ struct SerializeConstruct;
 //Serializer concept
 class Serializer
 {
+public:
+    //Required type aliases    
+    using serializer_type = Serializer;
+
 public:
     //The following functions must exist unless specified
 
@@ -188,6 +202,7 @@ public:
         }
         else
         {
+            //PolymorphicSerializeConstruct assumes that the value is not a nullptr
             PolymorphicSerializeConstruct<Base, Derived, Serializer>::Serialize(*this, value);
         }
     }
@@ -216,6 +231,7 @@ public:
         }
         else
         {
+            //PolymorphicSerializeConstruct assumes that the value is not a nullptr
             PolymorphicSerializeConstruct<Base, Derived, Serializer>::Deserialize(*this, value);
         }
     }
@@ -253,49 +269,82 @@ PolymorphicDeserializerFunctionMap<SerializerT>& GetPolymorphicDeserializeFuncti
 template<class Base, class Derived, class SerializerT>
 struct PolymorphicSerializeConstruct
 {
-    static void Serialize(SerializerT& serializer, const Derived*& v)
+    using value_type = Derived;
+    using pointer = Derived*;
+    using reference = Derived&;
+
+    using const_pointer = const Derived*;
+    using const_reference = const Derived&;
+
+    using base_value_type = Base;
+    using base_pointer = Base*;
+    using base_reference = Base&;
+
+    using const_base_pointer = const Base*;
+    using const_base_reference = const Base&;
+
+    using serializer_type = SerializerT;
+
+    static void Serialize(serializer_type& serializer, const_pointer& v)
     {
         serializer.Serialize("Type", std::string(typeid(*v).name()));
-        GetPolymorphicSerializeFunctions<SerializerT>()[typeid(*v).name()](serializer, std::any(std::reference_wrapper<const Base*>(v)));
+        GetPolymorphicSerializeFunctions<serializer_type>()[typeid(*v).name()](serializer, std::any(std::reference_wrapper<const_base_pointer>(v)));
     }
-    static void Deserialize(SerializerT& serializer, Derived*& v)
+    static void Deserialize(serializer_type& serializer, pointer& v)
     {
-        auto any = std::any(std::reference_wrapper<Base*>(v));
+        auto any = std::any(std::reference_wrapper<base_pointer>(v));
         std::string type;
 
         serializer.Deserialize("Type", type);
-        GetPolymorphicDeserializeFunctions<SerializerT>()[type](serializer, any);
+        GetPolymorphicDeserializeFunctions<serializer_type>()[type](serializer, any);
     }
 };
 
-template<class BaseType, class DerivedType, class SerializerT>
+template<class Base, class Derived, class SerializerT>
 class RegisterSerialization
 {
+public:
+    using value_type = Derived;
+    using pointer = Derived*;
+    using reference = Derived&;
+
+    using const_pointer = const Derived*;
+    using const_reference = const Derived&;
+
+    using base_value_type = Base;
+    using base_pointer = Base*;
+    using base_reference = Base&;
+
+    using const_base_pointer = const Base*;
+    using const_base_reference = const Base&;
+
+    using serializer_type = SerializerT;
+
 private:
     static RegisterSerialization* instance;
 
 private:
     RegisterSerialization()
     {
-        GetPolymorphicSerializeFunctions<SerializerT>()[typeid(DerivedType).name()] = PolymorphicSerialize;
-        GetPolymorphicDeserializeFunctions<SerializerT>()[typeid(DerivedType).name()] = PolymorphicDeserialize;
+        GetPolymorphicSerializeFunctions<serializer_type>()[typeid(value_type).name()] = PolymorphicSerialize;
+        GetPolymorphicDeserializeFunctions<serializer_type>()[typeid(value_type).name()] = PolymorphicDeserialize;
     }
 
-    static void PolymorphicSerialize(SerializerT& serializer, const std::any& v)
+    static void PolymorphicSerialize(serializer_type& serializer, const std::any& v)
     {
-        const DerivedType* value = static_cast<const DerivedType*>(std::any_cast<std::reference_wrapper<const BaseType*>>(v).get());
+        const_pointer value = static_cast<const_pointer>(std::any_cast<std::reference_wrapper<const_base_pointer>>(v).get());
         //This function does nothing but casts the serialized type to it's concrete type and forwards it to the real serialization
-        SerializeConstruct<DerivedType, SerializerT>::Serialize(serializer, *value);
+        SerializeConstruct<value_type, serializer_type>::Serialize(serializer, *value);
     }
 
-    static void PolymorphicDeserialize(SerializerT& serializer, std::any& v)
+    static void PolymorphicDeserialize(serializer_type& serializer, std::any& v)
     {
-        DerivedType* value = new DerivedType();
+        pointer value = new value_type();
 
         //This function does nothing but casts the deserialized type to it's concrete type and forwards it to the real serialization
-        SerializeConstruct<DerivedType, SerializerT>::Deserialize(serializer, *value);
+        SerializeConstruct<value_type, serializer_type>::Deserialize(serializer, *value);
 
-        std::any_cast<std::reference_wrapper<BaseType*>>(v).get() = value;
+        std::any_cast<std::reference_wrapper<base_pointer>>(v).get() = value;
 
 
     }

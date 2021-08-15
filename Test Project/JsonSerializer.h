@@ -30,10 +30,15 @@ SOFTWARE.
 //Serializer concept
 class JsonSerializer
 {
-    friend struct SerializeConstruct<std::string, JsonSerializer>;
+public:
+    using serializer_type = JsonSerializer;
+
 private:
     nlohmann::json json{};
     std::vector<std::string_view> tree;
+
+private:
+    friend struct SerializeConstruct<std::string, serializer_type>;
 
 
 public:
@@ -80,7 +85,7 @@ public:
     {
         tree.push_back(name);
 
-        SerializeConstruct<T, JsonSerializer>::Serialize(*this, value);
+        SerializeConstruct<T, serializer_type>::Serialize(*this, value);
 
         tree.pop_back();
     }
@@ -90,7 +95,7 @@ public:
     {
         tree.push_back(name);
 
-        SerializeConstruct<T, JsonSerializer>::Deserialize(*this, value);
+        SerializeConstruct<T, serializer_type>::Deserialize(*this, value);
 
         tree.pop_back();
     }
@@ -106,7 +111,7 @@ public:
         {
             tree.push_back(name);
 
-            SerializeConstruct<T, JsonSerializer>::Serialize(*this, *value);
+            SerializeConstruct<T, serializer_type>::Serialize(*this, *value);
 
             tree.pop_back();
         }
@@ -126,7 +131,7 @@ public:
             tree.push_back(name);
 
             value = new T();
-            SerializeConstruct<T, JsonSerializer>::Deserialize(*this, *value);
+            SerializeConstruct<T, serializer_type>::Deserialize(*this, *value);
 
             tree.pop_back();
         }
@@ -143,7 +148,7 @@ public:
         {
             tree.push_back(name);
 
-            PolymorphicSerializeConstruct<Base, Derived, JsonSerializer>::Serialize(*this, value);
+            PolymorphicSerializeConstruct<Base, Derived, serializer_type>::Serialize(*this, value);
 
             tree.pop_back();
         }
@@ -162,7 +167,7 @@ public:
         {
             tree.push_back(name);
 
-            PolymorphicSerializeConstruct<Base, Derived, JsonSerializer>::Deserialize(*this, value);
+            PolymorphicSerializeConstruct<Base, Derived, serializer_type>::Deserialize(*this, value);
 
             tree.pop_back();
         }

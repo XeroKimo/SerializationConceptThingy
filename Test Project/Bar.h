@@ -35,16 +35,25 @@ struct Bar : Foo
 template<>
 struct SerializeConstruct<Bar, JsonSerializer>
 {
-    static void Serialize(JsonSerializer& serializer, const Bar& v)
+    using value_type = Bar;
+    using pointer = Bar*;
+    using reference = Bar&;
+
+    using const_pointer = const Bar*;
+    using const_reference = const Bar&;
+
+    using serializer_type = JsonSerializer;
+
+    static void Serialize(serializer_type& serializer, const const_reference& v)
     {
-        SerializeConstruct<Foo, JsonSerializer>::Serialize(serializer, v);
+        SerializeConstruct<Foo, serializer_type>::Serialize(serializer, v);
         serializer.Serialize("y", v.y);
 
     }
 
-    static void Deserialize(JsonSerializer& serializer, Bar& v)
+    static void Deserialize(serializer_type& serializer, reference& v)
     {
-        SerializeConstruct<Foo, JsonSerializer>::Deserialize(serializer, v);
+        SerializeConstruct<Foo, serializer_type>::Deserialize(serializer, v);
         serializer.Deserialize("y", v.y);
     }
 
