@@ -31,57 +31,67 @@ SOFTWARE.
 
 int main()
 {
+    JsonSerializer serializer;
+    JsonSerializer serializer2;
+    int test = 20;
 
-    JsonSerializer serializer(L"testJson.json", std::ios_base::out);
-
-    int test = 6;
     serializer.Serialize("test", test);
+    int test2;
+    serializer.Deserialize("test", test2);
+    assert(test == test2);
 
-    Foo foo;
-    foo.x = 100;
-    serializer.SerializeObject("foo", foo);
+    int* ip = new int(50);
+    serializer.Serialize("ip", ip);
+    int* ip2; 
+    serializer.Deserialize("ip", ip2);
+    
+    assert(*ip == *ip2);
+
+    Foo f;
+    f.x = 300;
+    serializer.Serialize("f", f);
+    Foo f2;
+    serializer.Deserialize("f", f2);
+
+    assert(f.x == f2.x);
+
+    Bar b;
+    b.x = 300;
+    b.y = 600;
+    serializer2.Serialize("b", b);
+    Bar b2;
+    serializer2.Deserialize("b", b2);
+
+    assert(b.x == b2.x && b.y == b2.y);
+
+    Bar* bp = new Bar();
+    bp->x = 300;
+    bp->y = 700;
+    serializer2.Serialize("bp", bp);
+    Bar* bp2;
+    serializer2.Deserialize("bp", bp2);
+
+    if(bp == nullptr)
+        assert(bp == bp2);
+    else
+        assert(bp->x == bp2->x && bp->y == bp2->y);
+
+    Foo* foo = new Bar();
+    serializer2.PolySerialize<Foo>("foo", foo);
 
 
-    std::vector<int> values{ 5, 3, 7, 10 };
-    serializer.Serialize("values", values);
-
-    Bar bar;
-    bar.x = 200;
-    bar.y = 300;
-    serializer.PolymorphicSerializeObject<Foo>("bar", bar);
-
-    Foo* fBar = new Bar();
-    fBar->x = 100;
-    static_cast<Bar*>(fBar)->y = 600;
-    serializer.PolymorphicSerializeObject<Foo>("fBar", *fBar);
-
-    serializer.Close();
-
+    Foo* foo2;
+    serializer2.PolyDeserialize<Foo>("foo", foo2);
+    serializer.Merge(serializer2);
+    assert(typeid(*foo) == typeid(*foo2));
     {
-        JsonSerializer serializer(L"testJson.json", std::ios_base::in);
+        std::fstream stream("JsonTest.json", std::ios::out);
 
-        int test2;
-        Foo foo2{};
-        std::vector<int> values2;
-        Bar* bar2;
-        Foo* fBar2;
-
-        serializer.Deserialize("test", test2);
-        serializer.DeserializeObject("foo", foo2);
-        serializer.Deserialize("values", values2);
-        serializer.PolymorphicDeserializeObject<Foo>("bar", bar2);
-        serializer.PolymorphicDeserializeObject<Foo>("fBar", fBar2);
-
-
-        assert(test == test2);
-        assert(foo.x == foo2.x);
-
-        for(int i = 0; i < values.size(); i++)
-        {
-            assert(values[i] == values2[i]);
-        }
-        assert(bar.x == bar2->x && bar.y == static_cast<Bar*>(bar2)->y);
-        assert(typeid(*fBar) == typeid(*fBar2));
+        stream << serializer.Dump();
+        stream.flush();
+        stream.close();
+        std::string output = serializer.Dump();
     }
 
-}
+
+ }
