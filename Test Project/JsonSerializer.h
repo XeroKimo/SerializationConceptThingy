@@ -173,6 +173,11 @@ public:
         }
     }
 
+    nlohmann::json::const_reference Data() const
+    {
+        return json;
+    }
+
     void Merge(const serializer_type& type)
     {
         json.insert(type.json.begin(), type.json.end());

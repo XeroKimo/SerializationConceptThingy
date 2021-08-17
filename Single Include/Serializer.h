@@ -236,6 +236,11 @@ public:
         }
     }
 
+    const T& Data() const
+    {
+        //T is the underlying serializing object in case we want to read the raw data
+    }
+
     void Merge(const serializer_type& other)
     {
         //Merges the contents of the 2 serializers into 1
